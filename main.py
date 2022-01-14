@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Feb 2021
-
-@author: Natalia 
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -13,7 +6,7 @@ import scipy
 import csv
 import pandas as pd
 
-file = 'TimBrain_VisualCortex_BYB_Recording.wav'
+file = 'Tyler_BYB_Recording_2022-01-07_12.25.19.wav'
 fs, data = waves.read(file)
 
 length_data=np.shape(data)
@@ -22,9 +15,6 @@ ld_int=int(length_new)
 from scipy import signal
 data_new=signal.resample(data,ld_int)
 
-img = mpimg.imread('secondplot.png')
-imgplot = plt.imshow(img)
-plt.show()
 
 plt.figure('Spectrogram')
 d, f, t, im = plt.specgram(data_new, NFFT= 256, Fs=500, noverlap=250)
@@ -73,5 +63,57 @@ plt.plot(t, y)
 plt.xlabel('Time [s]')
 plt.xlim(0,max(t))
 plt.savefig("secondplot.png")
-plt.show()
 
+
+
+datosy=np.asarray(y)
+datosyt=np.array(
+        [
+        datosy,
+        t
+        ])
+with open ('datosyt.csv', 'w', newline='') as file:
+    writer=csv.writer(file, dialect='excel-tab')
+    writer.writerows(datosyt.T)
+    
+
+df = pd.read_csv("datosyt.csv", header=None, index_col=None)
+df.columns = ["Power                   Time"]
+df.to_csv("datosyt.csv", index=False)
+
+
+
+tg=np.array([30, 60, 90, 120, 150, 180, 210, 240, 270, 300, max(t)+1])
+
+length_t=np.shape(t)
+l_row_t=length_t[0]
+eyesclosed=[]
+eyesopen=[]
+j=0  #initial variable to traverse tg
+l=0  #initial variable to loop through the "y" data
+for i in range(0, l_row_t):
+    if t[i]>=tg[j]:
+        
+        if j%2==0:
+            eyesopen.append(np.mean(datosy[l:i]))
+        if j%2==1:
+            eyesclosed.append(np.mean(datosy[l:i]))
+        l=i
+        j=j+1
+
+        
+plt.figure('DataAnalysis')
+plt.boxplot([eyesopen, eyesclosed], sym = 'ko', whis = 1.5)
+plt.xticks([1,2], ['Eyes open', 'Eyes closed'], size = 'small', color = 'k')
+plt.ylabel('AlphaPower')
+plt.savefig("figure 3")
+
+meanopen=np.mean(eyesopen)
+meanclosed=np.mean(eyesclosed)
+sdopen=np.std(eyesopen)
+sdclosed=np.std(eyesclosed)
+eyes=np.array([eyesopen, eyesclosed])
+
+from scipy import stats
+result=stats.ttest_ind(eyesopen, eyesclosed, equal_var = False)
+print(result)
